@@ -67,3 +67,10 @@ test("a failed upload deletes its reservation, which would hold a job slot for a
 	expect(requests[2].method).toBe("DELETE");
 	expect(new URL(requests[2].url).pathname).toBe("/v1/separations/sep_test");
 });
+
+test("a webhook goes as a header, never in the query", async () => {
+	const requests = fakeFetch(json(separation("queued"), 202));
+	await create(api, new Blob(["audio"]), { stems: ["vocals"], webhook: "https://receiver.example/hooks?token=1" });
+	expect(requests[0].headers.get("disband-webhook")).toBe("https://receiver.example/hooks?token=1");
+	expect(requests[0].url).not.toContain("receiver.example");
+});

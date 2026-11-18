@@ -17,3 +17,4 @@ export type { CreateOptions } from "./create.ts";
 export type { RequestOptions } from "./api.ts";
 export type { Audio } from "./types/audio.ts";
 export { ApiError } from "./error.ts";
+export { verifyWebhook, webhookSecret } from "./webhook.ts";

@@ -87,6 +87,26 @@ try {
 }
 ```
 
+### Receive a webhook
+
+```ts
+import { verifyWebhook } from "disband";
+
+await disband.separations.create(song, {
+  stems: ["vocals"],
+  webhook: "https://example.com/disband",
+});
+
+// at https://example.com/disband
+export default {
+  async fetch(request: Request, env: { DISBAND_WEBHOOK_SECRET: string }) {
+    const separation = await verifyWebhook(request, env.DISBAND_WEBHOOK_SECRET);
+    if (separation === undefined) return new Response(null, { status: 400 });
+    return new Response(null, { status: 204 });
+  },
+};
+```
+
 ## Requirements
 
 - Node.js 22.12 or later

@@ -11,29 +11,33 @@ export type CreateOptions = RequestOptions & {
 	formats?: Format[];
 	/** The File's name when omitted. */
 	name?: string;
+	/** An `https` URL the separation is posted to once it is `ready` or `failed`. */
+	webhook?: string;
 };
 
 // the largest file sent as the request body
 const bodyLimit = 100_000_000;
 
-export async function create(api: Api, audio: Audio, { stems, formats = [], name, signal }: CreateOptions) {
+export async function create(api: Api, audio: Audio, { stems, formats = [], name, webhook, signal }: CreateOptions) {
 	const query = new URLSearchParams();
 	for (const stem of stems) query.append("stems", stem);
 	for (const format of formats) query.append("formats", format);
 	const named = name ?? nameOf(audio);
 	if (named !== undefined) query.set("name", named);
+	// a header, as request logs record query strings and a webhook URL may carry a token
+	const headers: Record<string, string> = webhook === undefined ? {} : { "disband-webhook": webhook };
 
 	const bytes = audio instanceof Blob ? audio.size : audio.byteLength;
 	if (bytes <= bodyLimit) {
 		return api.json<Separation>(`/v1/separations?${query}`, {
 			method: "POST",
-			headers: { "content-type": "application/octet-stream" },
+			headers: { ...headers, "content-type": "application/octet-stream" },
 			body: audio,
 			signal,
 		});
 	}
 	query.set("bytes", String(bytes));
-	const reserved = await api.json<Uploading>(`/v1/separations?${query}`, { method: "POST", signal });
+	const reserved = await api.json<Uploading>(`/v1/separations?${query}`, { method: "POST", headers, signal });
 	try {
 		// a presigned URL, so the key isn't sent
 		const upload = await fetch(reserved.upload_url, { method: "PUT", body: audio, signal });
