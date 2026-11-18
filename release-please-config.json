@@ -9,7 +9,7 @@
 	"packages": {
 		".": {
 			"package-name": "disband",
-			"changelog-path": "CHANGELOG.md"
+			"skip-changelog": true
 		}
 	},
 	"changelog-sections": [

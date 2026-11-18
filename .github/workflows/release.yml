@@ -1,7 +1,7 @@
 name: Release
 
-# release-please keeps a release PR with the next version and CHANGELOG.md from the Conventional Commits on main
-# merging that PR tags and releases it, and the publish job then sends that version to npm
+# release-please keeps a release PR with the next version from the Conventional Commits on main
+# merging that PR tags it and makes a GitHub release with the notes, and the publish job then sends that version to npm
 # publishing runs in this workflow, as a release made with GITHUB_TOKEN starts no other workflow
 
 on:
