@@ -1,0 +1,52 @@
+{
+	"name": "disband",
+	"version": "0.1.0",
+	"description": "TypeScript client for the Disband stem separation API",
+	"license": "MIT",
+	"type": "module",
+	"homepage": "https://disband.io/docs",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/disbandio/disband-js.git"
+	},
+	"keywords": [
+		"stem separation",
+		"vocal remover",
+		"audio",
+		"music",
+		"api"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"engines": {
+		"node": ">=22.12"
+	},
+	"packageManager": "pnpm@11.4.0",
+	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
+		"prepack": "pnpm build",
+		"check": "tsc",
+		"test": "vitest run",
+		"lint": "eslint .",
+		"format": "eslint --fix . && prettier --write ."
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^24.19.2",
+		"eslint": "^10.15.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-perfectionist": "^5.13.0",
+		"prettier": "^3.10.1",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.72.2",
+		"vitest": "^4.1.12"
+	}
+}
