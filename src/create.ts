@@ -18,29 +18,22 @@ export type CreateOptions = RequestOptions & {
 // the largest file sent as the request body
 const bodyLimit = 100_000_000;
 
-export async function create(api: Api, audio: Audio, { stems, formats = [], name, webhook, signal }: CreateOptions) {
-	const query = new URLSearchParams();
-	for (const stem of stems) query.append("stems", stem);
-	for (const format of formats) query.append("formats", format);
-	const named = name ?? nameOf(audio);
-	if (named !== undefined) query.set("name", named);
-	// a header, as request logs record query strings and a webhook URL may carry a token
-	const headers: Record<string, string> = webhook === undefined ? {} : { "disband-webhook": webhook };
-
+export async function create(api: Api, audio: Audio, options: CreateOptions): Promise<Separation> {
 	const bytes = audio instanceof Blob ? audio.size : audio.byteLength;
+	const named = { ...options, name: options.name ?? nameOf(audio) };
 	if (bytes <= bodyLimit) {
+		const { query, headers } = requestOf(named);
 		return api.json<Separation>(`/v1/separations?${query}`, {
 			method: "POST",
 			headers: { ...headers, "content-type": "application/octet-stream" },
 			body: audio,
-			signal,
+			signal: options.signal,
 		});
 	}
-	query.set("bytes", String(bytes));
-	const reserved = await api.json<Uploading>(`/v1/separations?${query}`, { method: "POST", headers, signal });
+	const reserved = await reserve(api, bytes, named);
 	try {
 		// a presigned URL, so the key isn't sent
-		const upload = await fetch(reserved.upload_url, { method: "PUT", body: audio, signal });
+		const upload = await fetch(reserved.upload_url, { method: "PUT", body: audio, signal: options.signal });
 		if (!upload.ok) throw await errorOf(upload);
 	} catch (error) {
 		// an unused reservation counts as an upload until it expires
@@ -48,9 +41,25 @@ export async function create(api: Api, audio: Audio, { stems, formats = [], name
 		throw error;
 	}
 	// the separation can still be uploading for a moment after the PUT
-	let state = await read(api, reserved.id, signal);
-	while (state.status === "uploading") state = await read(api, reserved.id, signal, true);
+	let state = await read(api, reserved.id, options.signal);
+	while (state.status === "uploading") state = await read(api, reserved.id, options.signal, true);
 	return state;
+}
+
+export function reserve(api: Api, bytes: number, options: CreateOptions): Promise<Uploading> {
+	const { query, headers } = requestOf(options);
+	query.set("bytes", String(bytes));
+	return api.json<Uploading>(`/v1/separations?${query}`, { method: "POST", headers, signal: options.signal });
+}
+
+function requestOf({ stems, formats = [], name, webhook }: CreateOptions) {
+	const query = new URLSearchParams();
+	for (const stem of stems) query.append("stems", stem);
+	for (const format of formats) query.append("formats", format);
+	if (name !== undefined) query.set("name", name);
+	// a header, as request logs record query strings and a webhook URL may carry a token
+	const headers: Record<string, string> = webhook === undefined ? {} : { "disband-webhook": webhook };
+	return { query, headers };
 }
 
 // the API refuses an empty name or one over 255 characters

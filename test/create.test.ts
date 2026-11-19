@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 import { fakeFetch, json, separation } from "./fetch.ts";
-import { create } from "../src/create.ts";
+import { create, reserve } from "../src/create.ts";
 import { Api } from "../src/api.ts";
 
 const api = new Api({ origin: "https://api.disband.test", key: "disband_key", retries: 0 });
@@ -66,6 +66,23 @@ test("a failed upload deletes its reservation, which would hold a job slot for a
 	});
 	expect(requests[2].method).toBe("DELETE");
 	expect(new URL(requests[2].url).pathname).toBe("/v1/separations/sep_test");
+});
+
+test("a reservation sends the size, stems, name and webhook but no body, and returns the upload URL", async () => {
+	const requests = fakeFetch(json(separation("uploading", { upload_url }), 202));
+	const reserved = await reserve(api, 4_000_000, {
+		stems: ["vocals"],
+		name: "example.wav",
+		webhook: "https://receiver.example/hooks",
+	});
+	expect(reserved.upload_url).toBe(upload_url);
+	expect(requests).toHaveLength(1);
+	const url = new URL(requests[0].url);
+	expect(url.searchParams.get("bytes")).toBe("4000000");
+	expect(url.searchParams.getAll("stems")).toEqual(["vocals"]);
+	expect(url.searchParams.get("name")).toBe("example.wav");
+	expect(requests[0].headers.get("disband-webhook")).toBe("https://receiver.example/hooks");
+	expect(requests[0].body).toBeNull();
 });
 
 test("a webhook goes as a header, never in the query", async () => {

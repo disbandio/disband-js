@@ -53,6 +53,26 @@ for (const [stem, files] of Object.entries(separation.stems)) {
 }
 ```
 
+### Upload from a user's browser
+
+Reserve the upload on your server, then hand the upload URL to the browser. The key stays on your server, and the
+file never passes through it.
+
+```ts
+// on your server
+const { id, upload_url } = await disband.separations.reserve(file.size, {
+  stems: ["vocals", "instrumental"],
+  webhook: "https://example.com/hooks/disband",
+});
+```
+
+```ts
+// in the browser, with the upload_url from your server
+await fetch(upload_url, { method: "PUT", body: file });
+```
+
+The separation starts once the upload is complete.
+
 ### Follow its progress
 
 ```ts

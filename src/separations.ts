@@ -1,5 +1,5 @@
-import type { Failed, Ready, Separation, SeparationPage } from "./types/separation.ts";
-import { type CreateOptions, create } from "./create.ts";
+import type { Failed, Ready, Separation, SeparationPage, Uploading } from "./types/separation.ts";
+import { type CreateOptions, create, reserve } from "./create.ts";
 import type { Api, RequestOptions } from "./api.ts";
 import { read, separationPath } from "./read.ts";
 import type { Audio } from "./types/audio.ts";
@@ -23,6 +23,15 @@ export class Separations {
 	/** Resolves once the separation is queued, not when it is done. */
 	create(audio: Audio, options: CreateOptions): Promise<Separation> {
 		return create(this.#api, audio, options);
+	}
+
+	/**
+	 * Reserves an upload for a file of `bytes` without sending it, so a client without the key, such as a user's
+	 * browser, can upload it with one `PUT` of exactly that size to `upload_url`. The separation is queued once the
+	 * upload is complete.
+	 */
+	reserve(bytes: number, options: CreateOptions): Promise<Uploading> {
+		return reserve(this.#api, bytes, options);
 	}
 
 	get(id: string, options: RequestOptions = {}): Promise<Separation> {
