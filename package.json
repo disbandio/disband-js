@@ -1,6 +1,6 @@
 {
 	"name": "disband",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "TypeScript client for the Disband stem separation API",
 	"license": "MIT",
 	"type": "module",
