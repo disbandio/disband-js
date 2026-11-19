@@ -27,8 +27,8 @@ export class Separations {
 
 	/**
 	 * Reserves an upload for a file of `bytes` without sending it, so a client without the key, such as a user's
-	 * browser, can upload it with one `PUT` of exactly that size to `upload_url`. The separation is queued once the
-	 * upload is complete.
+	 * browser, can upload it with one `PUT` of exactly that size to `upload_url`. The separation starts once the upload
+	 * is complete, and ends `failed` with `upload-expired` if the file doesn't arrive in time.
 	 */
 	reserve(bytes: number, options: CreateOptions): Promise<Uploading> {
 		return reserve(this.#api, bytes, options);

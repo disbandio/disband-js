@@ -6,6 +6,7 @@ export type ProblemType =
 	| "account-suspended"
 	| "account-locked"
 	| "not-found"
+	| "upload-expired"
 	| "length-required"
 	| "range-not-satisfiable"
 	| "unsupported-audio"

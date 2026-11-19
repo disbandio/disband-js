@@ -54,7 +54,7 @@ test("a larger file is put to a reserved upload without the key, then followed u
 	expect(held.headers.get("prefer")).toBe("wait=60");
 });
 
-test("a failed upload deletes its reservation, which would hold a job slot for an hour", async () => {
+test("a failed upload deletes its reservation, which would hold an upload's place until it lapses", async () => {
 	const requests = fakeFetch(
 		json(separation("uploading", { upload_url }), 202),
 		new Response(null, { status: 403 }),
