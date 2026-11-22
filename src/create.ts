@@ -33,7 +33,6 @@ export async function create(api: Api, audio: Audio, options: CreateOptions): Pr
 	}
 	const reserved = await reserve(api, bytes, named);
 	try {
-		// upload_url carries its own grant, so the key isn't sent
 		const upload = await fetch(reserved.upload_url, { method: "PUT", body: audio, signal: options.signal });
 		if (!upload.ok) throw await errorOf(upload);
 	} catch (error) {

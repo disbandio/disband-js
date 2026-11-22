@@ -26,7 +26,7 @@ export class Api {
 		return this.#attempt(url, { ...init, headers: { ...init.headers, authorization: `Bearer ${this.#key}` } });
 	}
 
-	// a file link from a response, which works without the key and may be on any host
+	// a file link from a response, on any host
 	open(url: string, options: RequestOptions = {}): Promise<Response> {
 		return this.#attempt(new URL(url), options);
 	}
