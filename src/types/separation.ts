@@ -13,7 +13,7 @@ export type Uploading = Common & { status: "uploading"; upload_url: string };
 export type Queued = Common & {
 	status: "queued";
 	charge?: number;
-	/** The place in line, 1 being next. Absent in `list`. */
+	/** The place in line, 1 being next. */
 	position?: number;
 };
 export type Processing = Common & { status: "processing"; charge: number };

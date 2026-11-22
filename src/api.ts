@@ -19,18 +19,26 @@ export class Api {
 		this.#retries = retries;
 	}
 
-	// an API path, or a file URL from a response
+	// an API path, with the key
 	async send(target: string, init: Init = {}): Promise<Response> {
 		const url = new URL(target, this.#origin);
 		if (url.origin !== this.#origin) throw new Error(`${url.origin} is not the API's origin`);
-		const headers = { ...init.headers, authorization: `Bearer ${this.#key}` };
+		return this.#attempt(url, { ...init, headers: { ...init.headers, authorization: `Bearer ${this.#key}` } });
+	}
+
+	// a file link from a response, which works without the key and may be on any host
+	open(url: string, options: RequestOptions = {}): Promise<Response> {
+		return this.#attempt(new URL(url), options);
+	}
+
+	async #attempt(url: URL, init: Init): Promise<Response> {
 		// a create may already be charged, so only reads and deletes retry these errors
 		const repeatable = init.method !== "POST";
 		for (let attempt = 0; ; attempt++) {
 			const last = attempt >= this.#retries;
 			let response: Response;
 			try {
-				response = await fetch(url, { ...init, headers, redirect: "manual" });
+				response = await fetch(url, { ...init, redirect: "manual" });
 			} catch (error) {
 				// sleep rejects on abort, which ends the retries
 				if (!repeatable || last) throw error;
@@ -43,7 +51,7 @@ export class Api {
 			// busy is returned before anything is created, so any method retries
 			if (error.type === "busy") {
 				await sleep(Number(response.headers.get("retry-after") ?? 1) * 1000, init.signal);
-			} else if (repeatable && error.status >= 500) {
+			} else if (repeatable && response.status >= 500) {
 				await sleep(backoff(attempt), init.signal);
 			} else {
 				throw error;

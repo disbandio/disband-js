@@ -1,17 +1,31 @@
-import type { Problem, ProblemType } from "./types/problem.ts";
+import type { Failure, Problem, ProblemType } from "./types/problem.ts";
+import type { Failed } from "./types/separation.ts";
 
-/** An error response, with the API's problem details. `type` is undefined for a response without them. */
+/**
+ * An error response with the API's problem details, or a separation that failed to start after its upload, which
+ * `create` throws as the response a smaller file would have had. `type` is undefined for a response without problem
+ * details.
+ */
 export class ApiError extends Error {
 	override readonly name = "ApiError";
 	readonly type?: ProblemType;
 
 	constructor(
-		readonly status: number,
-		readonly problem?: Problem,
+		/** Undefined for a separation that failed to start. */
+		readonly status: number | undefined,
+		readonly problem?: Problem | Failure,
+		/** The separation that failed to start. */
+		readonly separation?: Failed,
 	) {
-		super(problem === undefined ? `HTTP ${status}` : [problem.title, problem.detail].filter(Boolean).join(": "));
+		super(messageOf(status, problem));
 		this.type = problem?.type;
 	}
+}
+
+function messageOf(status: number | undefined, problem: Problem | Failure | undefined): string {
+	if (problem === undefined) return `HTTP ${status}`;
+	const title = "title" in problem ? problem.title : problem.type;
+	return [title, problem.detail].filter(Boolean).join(": ");
 }
 
 export async function errorOf(response: Response): Promise<ApiError> {

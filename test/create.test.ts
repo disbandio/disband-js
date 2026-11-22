@@ -54,6 +54,22 @@ test("a larger file is put to a reserved upload without the key, then followed u
 	expect(held.headers.get("prefer")).toBe("wait=60");
 });
 
+test("a larger file that fails to start throws as a smaller one's create would", async () => {
+	const failed = separation("failed", { charge: 0, problem: { type: "out-of-credits" } });
+	fakeFetch(
+		json(separation("uploading", { upload_url }), 202),
+		new Response(null, { status: 200 }),
+		json(separation("uploading", { upload_url })),
+		json(failed),
+	);
+	await expect(create(api, new Blob([new Uint8Array(bodyLimit + 1)]), { stems: ["vocals"] })).rejects.toMatchObject({
+		name: "ApiError",
+		type: "out-of-credits",
+		status: undefined,
+		separation: failed,
+	});
+});
+
 test("a failed upload deletes its reservation, which would hold an upload's place until it lapses", async () => {
 	const requests = fakeFetch(
 		json(separation("uploading", { upload_url }), 202),

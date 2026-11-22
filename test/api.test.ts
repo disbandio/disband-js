@@ -60,13 +60,13 @@ test("an abort during Retry-After ends the wait with the signal's reason", async
 	await expect(sent).rejects.toThrow("gone");
 });
 
-test("the key goes to the API's origin only", async () => {
-	const requests = fakeFetch(new Response("mp3"));
-	await expect(api.send("https://elsewhere.test/v1/separations/sep_test/stems/vocals/mp3")).rejects.toThrow(
-		"elsewhere.test",
-	);
+test("the key goes to the API's origin only, and a file link is fetched without it", async () => {
+	const requests = fakeFetch(new Response("{}"), new Response("mp3"));
+	await expect(api.send("https://elsewhere.test/v1/separations")).rejects.toThrow("elsewhere.test");
 	expect(requests).toHaveLength(0);
 
-	await api.send("https://api.disband.test/v1/separations/sep_test/stems/vocals/mp3");
+	await api.send("/v1/separations");
 	expect(requests[0]?.headers.get("authorization")).toBe("Bearer disband_key");
+	await api.open("https://files.test/separations/sep_test/vocals.mp3?X-Amz-Signature=signed");
+	expect(requests[1]?.headers.get("authorization")).toBeNull();
 });

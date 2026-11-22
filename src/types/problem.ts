@@ -8,7 +8,6 @@ export type ProblemType =
 	| "not-found"
 	| "upload-expired"
 	| "length-required"
-	| "range-not-satisfiable"
 	| "unsupported-audio"
 	| "bad-audio"
 	| "busy"

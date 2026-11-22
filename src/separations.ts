@@ -1,4 +1,4 @@
-import type { Failed, Ready, Separation, SeparationPage, Uploading } from "./types/separation.ts";
+import type { Failed, Processing, Queued, Ready, Separation, SeparationPage, Uploading } from "./types/separation.ts";
 import { type CreateOptions, create, reserve } from "./create.ts";
 import type { Api, RequestOptions } from "./api.ts";
 import { read, separationPath } from "./read.ts";
@@ -20,8 +20,11 @@ export class Separations {
 		this.#api = api;
 	}
 
-	/** Resolves once the separation is queued, not when it is done. */
-	create(audio: Audio, options: CreateOptions): Promise<Separation> {
+	/**
+	 * Resolves once the separation is queued, not when it is done. Throws `ApiError` if it can't start, also for a
+	 * large file that fails to start after its upload.
+	 */
+	create(audio: Audio, options: CreateOptions): Promise<Queued | Processing | Ready> {
 		return create(this.#api, audio, options);
 	}
 

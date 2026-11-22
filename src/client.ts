@@ -26,9 +26,12 @@ export class Disband {
 		this.separations = new Separations(this.#api);
 	}
 
-	/** Fetches a stem file with the API key. */
+	/**
+	 * Fetches a stem file from its link, which works without the API key until the separation's `expires_at`.
+	 * Rejects with an `ApiError` once the link has expired or the separation was deleted.
+	 */
 	download(file: StemFile, options: RequestOptions = {}): Promise<Response> {
-		return this.#api.send(file.url, options);
+		return this.#api.open(file.url, options);
 	}
 
 	/** The stems a separation can request. */

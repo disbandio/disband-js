@@ -1,9 +1,9 @@
-import type { Separation, Uploading } from "./types/separation.ts";
+import type { Processing, Queued, Ready, Uploading } from "./types/separation.ts";
 import type { Format, StemId } from "./types/stem.ts";
 import type { Api, RequestOptions } from "./api.ts";
 import { read, separationPath } from "./read.ts";
+import { ApiError, errorOf } from "./error.ts";
 import type { Audio } from "./types/audio.ts";
-import { errorOf } from "./error.ts";
 
 export type CreateOptions = RequestOptions & {
 	stems: StemId[];
@@ -18,12 +18,13 @@ export type CreateOptions = RequestOptions & {
 // the largest file sent as the request body
 const bodyLimit = 100_000_000;
 
-export async function create(api: Api, audio: Audio, options: CreateOptions): Promise<Separation> {
+// ready only if the whole job ran between the upload and the first read
+export async function create(api: Api, audio: Audio, options: CreateOptions): Promise<Queued | Processing | Ready> {
 	const bytes = audio instanceof Blob ? audio.size : audio.byteLength;
 	const named = { ...options, name: options.name ?? nameOf(audio) };
 	if (bytes <= bodyLimit) {
 		const { query, headers } = requestOf(named);
-		return api.json<Separation>(`/v1/separations?${query}`, {
+		return api.json<Queued>(`/v1/separations?${query}`, {
 			method: "POST",
 			headers: { ...headers, "content-type": "application/octet-stream" },
 			body: audio,
@@ -32,7 +33,7 @@ export async function create(api: Api, audio: Audio, options: CreateOptions): Pr
 	}
 	const reserved = await reserve(api, bytes, named);
 	try {
-		// a presigned URL, so the key isn't sent
+		// upload_url carries its own grant, so the key isn't sent
 		const upload = await fetch(reserved.upload_url, { method: "PUT", body: audio, signal: options.signal });
 		if (!upload.ok) throw await errorOf(upload);
 	} catch (error) {
@@ -43,6 +44,8 @@ export async function create(api: Api, audio: Audio, options: CreateOptions): Pr
 	// the separation can still be uploading for a moment after the PUT
 	let state = await read(api, reserved.id, options.signal);
 	while (state.status === "uploading") state = await read(api, reserved.id, options.signal, true);
+	// a body create would have answered this problem, so it throws at any size
+	if (state.status === "failed") throw new ApiError(undefined, state.problem, state);
 	return state;
 }
 
